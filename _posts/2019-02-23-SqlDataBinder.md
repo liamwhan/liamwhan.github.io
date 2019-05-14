@@ -23,8 +23,70 @@ while (await reader.ReadAsync())
 
 If all of your data is as concise as the example above, then I guess this approach is fine, but when you're dealing with 20+ column datasets, things get ugly very quick. 
 
-That's why I wrote a simple little model binder for the `SqlDataReader` class:
+That's why I wrote [`SqlDataBinder` a simple little model binder for `SqlDataReader`s class.](#class-definition)
 
+### Usage
+We'll get to the class definition in a moment, for now let's take a quick look at how to use it:
+
+```cs
+// Initialize our connection to the DB
+string connectionString = ... // your Sql connection string
+string query = "SELECT * FROM SomeTable";
+
+var binder = new SqlDataBinder(); // Initialize the Binder
+
+using (var connection = new SqlConnection(connectionString))
+{
+    var command = new SqlCommand(sql, connection);
+
+    await connection.OpenAsync();
+
+    using (var reader = await command.ExecuteReaderAsync())
+    {
+        while (await reader.ReadAsync())
+        {
+            var myModel = binder.Bind<MyModel>(reader); // This is all you need the rest is boilerplate for connecting to SQL
+        }
+    }
+}
+```
+
+### Attributes
+The `SqlDataBinder` supports some of the most-used attribute decorations for data seralization, and some custom attributes including:
+- Newtonsoft's `JsonPropertyAttribute` from the JSON.Net library
+- `System.Runtime.Serialization`'s `DataMemberAttribute`
+- `SqlBindIgnoreAttribute` - A custom attribute (defined below) to instruct the Binder to ignore certain properties
+- `SqlBindColumn` - A custom attribute (defined below) to explicitly define the DB column name that should be bound to the property.
+
+#### `SqlBindIgnoreAttribute` Definition
+This attributes purpose is very simple: if you have properties on your Model that do not exist in the database, then you want a way to tell the binder to skip these properties. This is just a marker attribute, so we just check for its presence on the property and skip binding to that property if it is found. 
+
+```cs
+[AttributeUsage(AttributeTargets.Property)]
+public class SqlBindIgnoreAttribute : Attribute
+{
+}
+```
+
+#### `SqlBindIgnoreAttribute` Usage
+Example usage, this will be ignored by  `SqlDataBinder` but still serialized by JSON.Net.
+
+```cs
+public class MyModel 
+{
+    [SqlBindIgore]
+    [JsonProperty("id")]
+    public string Id {get; set;}
+}
+
+
+```
+
+#### `SqlBindColumnAttribute` Definition
+This optional attribute works in much the same way as the `DataMember` and `JsonProperty` attributes do with for serialization. It specifies the name of DB column that maps to this property. You can also use `[DataMember(Name = "myColumnName")]` or `[JsonProperty("myColumnName")]` to achieve this and the result will be the same. But some times you want 
+
+### Class Definition
+Lets take a look at the `SqlDataBinder` class definition:
 ```cs
 public class SqlDataBinder
 {
@@ -39,18 +101,27 @@ public class SqlDataBinder
         {
             if (propInfo.GetCustomAttribute(typeof(SqlBindIgnoreAttribute)) is SqlBindIgnoreAttribute ignoreAttribute) continue; // Skip Properties with this Attribute
 
-            string colName = string.Empty;
+            string colName = propInfo.Name;
 
+            // First get any JsonProperty Attributes that decorate the property to determine the DB column name. 
+            // This will be overwritten by the SqlDataColumn attribute if both are present
+            if (propInfo.GetCustomAttribute(typeof(JsonPropertyAttribute), true) is JsonPropertyAttribute jsonAttribute)
+            {
+                colName = jsonAttribute.PropertyName;
+            }
+            
+            // Get any DataMember attributes that decorate the property to determine the DB column name
             if (propInfo.GetCustomAttribute(typeof(DataMemberAttribute), true) is DataMemberAttribute dmAttribute)
             {
                 colName = dmAttribute.Name;
             }
 
-            // Prioritise JsonProperty Attribute if present
-            if (propInfo.GetCustomAttribute(typeof(JsonPropertyAttribute), true) is JsonPropertyAttribute jsonAttribute)
+            // Lastly overwrite the column name using the custom SqlBindColumn Attribute if present
+            if (propInfo.GetCustomAttribute(typeof(SqlBindmnAttribute), true) is SqlDataColumnAttribute sqlAttribute)
             {
-                colName = jsonAttribute.PropertyName;
+                colName = sqlAttribute.Name;
             }
+            
 
             if (string.IsNullOrEmpty(colName)) continue;
 
