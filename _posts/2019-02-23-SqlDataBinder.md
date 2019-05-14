@@ -25,6 +25,10 @@ If all of your data is as concise as the example above, then I guess this approa
 
 That's why I wrote [`SqlDataBinder` a simple little model binder for `SqlDataReader`s class.](#class-definition)
 
+
+----------------
+
+
 ### Usage
 We'll get to the class definition in a moment, for now let's take a quick look at how to use it.
 
@@ -58,6 +62,10 @@ using (var connection = new SqlConnection(connectionString))
     }
 }
 ```
+
+
+----------------
+
 
 ### Attributes
 The `SqlDataBinder` supports some of the most-used attribute decorations for data seralization, and some custom attributes including:
@@ -118,6 +126,11 @@ public class MyModel
     public string Id {get; set;}
 }
 ```
+
+
+----------------
+
+
 
 ### Class Definition
 Lets take a look at the `SqlDataBinder` class definition:
