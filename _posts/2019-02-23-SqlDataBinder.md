@@ -69,21 +69,47 @@ public class SqlBindIgnoreAttribute : Attribute
 ```
 
 #### `SqlBindIgnoreAttribute` Usage
-Example usage, this will be ignored by  `SqlDataBinder` but still serialized by JSON.Net.
+Example usage, this will case the `Id` property to be ignored by  `SqlDataBinder` but still serialized by JSON.Net.
 
 ```cs
 public class MyModel 
 {
-    [SqlBindIgore]
+    [SqlBindIgnore]
     [JsonProperty("id")]
     public string Id {get; set;}
 }
-
-
 ```
 
 #### `SqlBindColumnAttribute` Definition
-This optional attribute works in much the same way as the `DataMember` and `JsonProperty` attributes do with for serialization. It specifies the name of DB column that maps to this property. You can also use `[DataMember(Name = "myColumnName")]` or `[JsonProperty("myColumnName")]` to achieve this and the result will be the same. But some times you want 
+When `SqlDataBinder` is processing a row, it needs to decide how to associate DB column to your model's properties. Without any hints, it will just try to find a column in the DB data that has the same name as the property of your Model. But alot of the time you want more control than that. 
+
+The optional `SqlBindColumn` attribute works in much the same way as the `DataMember` and `JsonProperty` attributes do with for serialization. It specifies the name of DB column that maps to this property. You can also use `[DataMember(Name = "myColumnName")]` or `[JsonProperty("myColumnName")]` to achieve this and the result will be the same. 
+
+```cs
+[AttributeUsage(AttributeTargets.Property)]
+public class SqlBindColumn : Attribute
+{
+    public string Name { get; set; }
+
+    public SqlBindColumn(string name)
+    {
+        Name = name;
+    }
+}
+
+```
+
+#### `SqlBindColumnAttribute` Usage
+Example usage, when you need to bind to property from the DB but want to rename the property when serializing it to JSON, use `SqlBindColumn`.
+
+```cs
+public class MyModel
+{
+    [JsonProperty("productId")]
+    [SqlBindColumn("id")]
+    public string Id {get; set;}
+}
+```
 
 ### Class Definition
 Lets take a look at the `SqlDataBinder` class definition:
