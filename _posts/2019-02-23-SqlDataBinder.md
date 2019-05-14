@@ -26,8 +26,16 @@ If all of your data is as concise as the example above, then I guess this approa
 That's why I wrote [`SqlDataBinder` a simple little model binder for `SqlDataReader`s class.](#class-definition)
 
 ### Usage
-We'll get to the class definition in a moment, for now let's take a quick look at how to use it:
+We'll get to the class definition in a moment, for now let's take a quick look at how to use it.
 
+The simplest example looks like this:
+```cs
+var myModel = binder.Bind<MyModel>(reader);
+```
+In this above example `reader` is an instance of `SqlDataReader` from the `System.Data.SqlClient` namespace.
+
+
+A more complete and realistic example is below:
 ```cs
 // Initialize our connection to the DB
 string connectionString = ... // your Sql connection string
@@ -212,19 +220,19 @@ public class SqlDataBinder
 
         return instance;
     }
-
-
-
+    
     private T Cast<T>(object input)
     {
         return (T)Convert.ChangeType(input, typeof(T));
     }
 
+    // Base check for nullable types 
     private bool IsNullable(Type t)
     {
         return Nullable.GetUnderlyingType(t) != null;
     }
 
+    // Gets the value type, unwraping Nullable<T> constructs
     private Type GetValueType(Type t)
     {
         if (t == typeof(string)) return t;
@@ -232,9 +240,11 @@ public class SqlDataBinder
 
         return Nullable.GetUnderlyingType(t);
     }
-
-
 }
-
 ```
 
+### Closing Remarks
+
+You may have noticed the custom exception I throw in there `SqlDataBindingException`. I have not definied it here as it is just a straight derivation from the `Exception` class and could easily be replaced with a more generic exception like `InvalidOperationException` etc. But when I'm programming in C# (I turn exceptions off in C++) I tend to use `try/catch` blocks with multiple `catch`es so I can return a meaningful error to the User.
+
+I hope this is useful, let me know if you used it in your project or if you have any suggestions, sound off in the comments. 
