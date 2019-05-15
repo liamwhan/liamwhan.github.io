@@ -22,7 +22,7 @@ Once the service is deployed, I start my last round of manual testing in our Azu
 ... The changes I'd just deployed were not there. The endpoint was working, but the formatting bug was still there. 
 <br/>
 <br/>
-## Zero-cost Abstractions
+## Trial and Azure
 
 So I did some detective work:
 
@@ -41,4 +41,18 @@ Consumption Plans are scalable in ways that App Service plans are not, so when w
 So I checked the Functions App Settings. Everything looked good. We had both a `WEBSITE_CONTENTAZUREFILECONNECTIONSTRING` and `WEBSITE_CONTENTSHARE`. 
 
 At this point I got curious, and lucky I did otherwise this would have taken me days to find. 
+<br/>
+<br/>
+## Suspicious Storage
+
+When you create a new Function App instance in the Azure Portal, you need to create a couple of support resources, namely:
+- A Storage Account; and
+- An optional Application Insights instance
+
+For Function Apps that run on an App Service Plan, the Function is deployed to a dynamically provisioned VM. 
+
+**But...** in the case of Functions that run on Consumption Plans. The Function App is deployed to a **File Share** that is automatically created under the Storage Account for that Function App Instance.
+
+So I opened up [Azure Storage Explorer](https://docs.microsoft.com/en-us/azure/vs-azure-tools-storage-manage-with-storage-explorer?tabs=windows) and did some snooping around in the Storage Accounts list and I found this:
+
 
