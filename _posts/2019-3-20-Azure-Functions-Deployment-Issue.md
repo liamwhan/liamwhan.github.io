@@ -41,6 +41,8 @@ Consumption Plans are scalable in ways that App Service plans are not, so when w
 So I checked the Functions App Settings. Everything looked good. We had both a `WEBSITE_CONTENTAZUREFILECONNECTIONSTRING` and `WEBSITE_CONTENTSHARE`. 
 
 At this point I got curious, and lucky I did otherwise this would have taken me days to find. 
+
+So I created a new Function App Instance and a Fresh CI/CD Pipeline to deploy to it and then compared the settings on the old set up to the new setup.
 <br/>
 <br/>
 ## Suspicious Storage
@@ -54,5 +56,19 @@ For Function Apps that run on an App Service Plan, the Function is deployed to a
 **But...** in the case of Functions that run on Consumption Plans. The Function App is deployed to a **File Share** that is automatically created under the Storage Account for that Function App Instance.
 
 So I opened up [Azure Storage Explorer](https://docs.microsoft.com/en-us/azure/vs-azure-tools-storage-manage-with-storage-explorer?tabs=windows) and did some snooping around in the Storage Accounts list and I found this:
-![_config.yml](/images/Storage.png)
 
+![Azure Storage Explorer Multiple File Shares](https://github.com/liamwhan/liamwhan.github.io/blob/master/images/Storage.PNG?raw=true)
+
+**There were 2 File Shares**. 
+
+## Resolution
+
+The creation of file shares for Consumption Plans is entirely automated by Azure. So it took my a while to figure out what had happened. 
+
+At some point, the `WEBSITE_CONTENTSHARE` Application Setting had been deleted. But instead of failing to deploy, Azure had silently recovered by creating a new File Share under the Storage Account and deploying the Function App there. 
+
+But, during the creation of a CD Stage in Azure Pipelines, when you link a Consumption Plan Function App in Azure Pipelines as a deployment target, it fetches the File Share to deploy to and stores it as the upload target for the Release.
+
+So we were deploying to the old file share, but the Function App settings were pointing to the new file share, which, while it was running a working build of the Function App, wasn't getting any of the updates. 
+
+As a result 
