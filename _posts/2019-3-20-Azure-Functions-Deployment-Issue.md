@@ -71,4 +71,3 @@ But, during the creation of a CD Stage in Azure Pipelines, when you link a Consu
 
 So we were deploying to the old file share, but the Function App settings were pointing to the new file share, which, while it was running a working build of the Function App, wasn't getting any of the updates. 
 
-As a result 
