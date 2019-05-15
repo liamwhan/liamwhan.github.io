@@ -54,5 +54,5 @@ For Function Apps that run on an App Service Plan, the Function is deployed to a
 **But...** in the case of Functions that run on Consumption Plans. The Function App is deployed to a **File Share** that is automatically created under the Storage Account for that Function App Instance.
 
 So I opened up [Azure Storage Explorer](https://docs.microsoft.com/en-us/azure/vs-azure-tools-storage-manage-with-storage-explorer?tabs=windows) and did some snooping around in the Storage Accounts list and I found this:
-
+![_config.yml](/images/Storage.png)
 
